@@ -62,7 +62,23 @@ def server[F[_]: Concurrent: Timer: ContextShift]:Stream[F, Unit] =
 
 Note:
 
-TCP server represented as a stream of connections, emits one element for
+Minimal TCP server represented as a stream of connections, emits one
+element for each new connection. We then obtain the socket, and
+represent the input process as another stream: we emit elements from 0
+to 10, 1 per second (metered), map them to string messages, encode
+them and send them through the socket. All these connections are
+served concurrently (parJoinUnbounded), and after 10 minutes we
+interrupt all processes (interruptAfter), making sure all the
+connections shutdown gracefully (endOfOutput) before moving on. This
+is compositional, and we can do something else after interrupting this
+server.
+In addition to offering a high level, declarative model for
+concurrency including interruption and resource safety, there is
+another interesting aspect to this code: it runs on a fixed number of
+threads, even though we serve way more connections than available
+threads, and do a lot of sleeping.
+
+
 
 ---
 
