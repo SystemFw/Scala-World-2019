@@ -78,27 +78,28 @@ another interesting aspect to this code: it runs on a fixed number of
 threads, even though we serve way more connections than available
 threads, and do a lot of sleeping.
 
+---
 
+## Layers
 
 ---
 
+## Pictures
+
+![](image.png)
+
+Does a sentence fit here
+
+---
+
+---
+
+
+
+
+
 <!-- How do fibers work -->
 <!-- A peek under the hood -->
-
-<!-- So, this talk is going to be different from what I usually do, -->
-<!-- normally I present a general concept and progressive code examples -->
-<!-- around it, treating the implementation of that idea as a black box. -->
-<!-- This is great, and good abstractions allow us to do this without -->
-<!-- losing reasoning powers, but this time I want to show you a bit more -->
-<!-- of what happens under the hood. For many engineers "how does this -->
-<!-- work?" remains one of most rewarding questions to ask, and hopefully -->
-<!-- you will enjoy this journey into the implementation of the lightweight -->
-<!-- threading system that powers cats-effect and fs2. -->
-
-<!-- Show fs2 example that periodically spawns streams, perhaps with some -->
-<!-- additional waiting to show semantic blocking, perhaps with -->
-<!-- interruptAfter to show interruption. Stress how this runs on a costant -->
-<!-- number of threads, and how the sleeps don't block. -->
 
 <!-- Analyse the pieces: -->
 <!-- - fs2 gives you compositional and safe concurrency. Many combinators -->
