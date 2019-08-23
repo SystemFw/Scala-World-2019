@@ -29,7 +29,7 @@ Note:
 My name is Fabio, I'm a principal software engineer at Ovo Energy, we do lots of Scala and lots of FP, so if you fancy moving to London come and talk to me after.
 
 
----
+----
 
 ## About me
 
@@ -78,9 +78,76 @@ another interesting aspect to this code: it runs on a fixed number of
 threads, even though we serve way more connections than available
 threads, and do a lot of sleeping.
 
----
+----
 
 ## Layers
+
+- <!-- .element: class="fragment" --> **fs2**: Declarative, high
+   level, safe concurrency. Many combinators and a concept of
+   _lifetime_ through `Stream`.
+- <!-- .element: class="fragment" --> **cats-effect typeclasses**:
+   Specification for low level, foundational primitives.
+- <!-- .element: class="fragment" --> **cats-effect `IO`**: Concrete
+   implementation of the runtime system.
+
+----
+
+As a user, I highly recommend a higher level model like **fs2**'s.
+
+<!-- .element: class="fragment" !--> But today we are _implementors_,
+and we will look at the low level runtime that powers `IO`.
+
+Note:
+- As a user, I highly recommend using a higher level concurrency
+  abstraction like fs2, which is at the same time more expressive and
+  safer.
+- But today we wear our implementors hat, and we are exclusively going
+  to look at the cats-effect low level primitives that power the whole
+  system.
+- organising this functionality in typeclasses it its own topic, we
+  are going to focus on concrete IO
+
+
+---
+
+## Asynchrony & Concurrency
+
+----
+
+## Asynchronous process
+
+Traditionally defined as:
+
+> A process that executes outside of the program main flow
+
+Note:
+Stress how we aren't dealing with distributed systems right now
+
+
+----
+
+## Asynchronous process
+
+For our purposes:
+
+> A process that continues its execution in a different place or time
+  than the one it started in
+
+Note:
+Stress how "place and time" is intentionally vague
+
+----
+
+## Asynchronous process
+
+![](img/async1.png)
+
+Note:
+
+An async boundary is extremely general: it could trasfering the
+computation to another node in the network, or send it to another OS
+thread, or putting it at the end of a queue where it gets picked up
+later.
 
 ---
 
@@ -94,6 +161,11 @@ threads, and do a lot of sleeping.
 ---
 
 
+<!-- TODO at the end: -->
+<!-- - slide nesting -->
+<!-- - css: images | text -->
+<!-- - css: images border -->
+<!-- can use custom css on a slide-by-slide basis I think -->
 
 
 
@@ -127,13 +199,14 @@ threads, and do a lot of sleeping.
 <!-- Interlude: concurrency, asynchrony, threads -->
 <!-- asynchrony -->
 <!-- concurrency -->
-<!-- thread: logical sequence over asynchrony -->
-<!-- interleaving -->
 <!-- concept of step -->
+<!-- interleaving -->
+<!-- thread: logical sequence over asynchrony -->
 <!-- scheduling -->
 <!-- cooperative vs preemptive -->
 <!-- blocking/suspending -->
 <!-- m:n hierarchy -->
+<!-- aside: parallelism -->
 <!-- cost of blocking -->
 <!-- semantic blocking (thread free) -->
 
@@ -732,3 +805,4 @@ threads, and do a lot of sleeping.
 <!-- - I'm not on Twitter, reach out on Gitter @SystemFw! -->
 <!-- - http://systemfw.org/scala-italy-2018/#/ -->
 <!-- - [Example code](https://github.com/SystemFw/TL-Summit-Philly-2019/blob/master/Examples.scala) -->
+
