@@ -144,12 +144,13 @@ Stress how "place and time" is intentionally vague
 
 Note:
 
-An async boundary is extremely general: it could trasfering the
-computation to another node in the network, or send it to another OS
+An async boundary is extremely general: it could be trasfering the
+computation to another node in the network, or sending it to another OS
 thread, or putting it at the end of a queue where it gets picked up
 later.
 
----
+----
+
 
 ## Pictures
 
@@ -167,6 +168,21 @@ later.
 <!-- - css: images border -->
 <!-- can use custom css on a slide-by-slide basis I think -->
 
+<!-- Concurrency -->
+<!-- Programming as the composition of independently executing processes -->
+<!-- Parallelism -->
+<!-- Programming as the simultaneous execution of (possibly related) computations. -->
+<!-- Concurrency is about dealing with lots of things at once. -->
+<!-- Parallelism is about doing lots of things at once. -->
+<!-- Not the same, but related. -->
+<!-- Concurrency is about structure, parallelism is about execution. -->
+<!-- Concurrency provides a way to structure a solution to solve a problem that may (but not necessarily) be parallelizable. -->
+<!-- In many fields, the words parallel and concurrent are synonyms; not so in programming, where they are used to describe fundamentally different concepts. -->
+<!-- A parallel program is one that uses a multiplicity of computational hardware (e.g., sev‐ eral processor cores) to perform a computation more quickly. The aim is to arrive at the answer earlier, by delegating different parts of the computation to different processors that execute at the same time. -->
+<!-- By contrast, concurrency is a program-structuring technique in which there are multiple threads of control. Conceptually, the threads of control execute “at the same time”; that is, the user sees their effects interleaved. Whether they actually execute at the same time or not is an implementation detail; a concurrent program can execute on a single pro‐ cessor through interleaved execution or on multiple physical processors. -->
+<!-- While parallel programming is concerned only with efficiency, concurrent program‐ ming is concerned with structuring a program that needs to interact with multiple in‐ dependent external agents (for example, the user, a database server, and some external clients). Concurrency allows such programs to be modular; the thread that interacts with the user is distinct from the thread that talks to the database. In the absence of concurrency, such programs have to be written with event loops and callbacks, which are typically more cumbersome and lack the modularity that threads offer. -->
+<!-- The notion of “threads of control” does not make sense in a purely functional program, because there are no effects to observe, and the evaluation order is irrelevant. So con‐ currency is a structuring technique for effectful code; in Haskell, that means code in the IO monad. -->
+<!-- A related distinction is between deterministic and nondeterministic programming mod‐ els. A deterministic programming model is one in which each program can give only one result, whereas a nondeterministic programming model admits programs that may have different results, depending on some aspect of the execution. Concurrent pro‐ gramming models are necessarily nondeterministic because they must interact with external agents that cause events at unpredictable times. Nondeterminism has some notable drawbacks, however: Programs become significantly harder to test and reason about. -->
 
 
 <!-- How do fibers work -->
