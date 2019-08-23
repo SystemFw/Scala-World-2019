@@ -22,7 +22,7 @@ cats-effect and fs2.
 
 ---
 
-<!-- .slide: data-background="logo.png" -->
+<!-- .slide: data-background="img/logo.png" -->
 
 
 Note:
@@ -33,7 +33,7 @@ My name is Fabio, I'm a principal software engineer at Ovo Energy, we do lots of
 
 ## About me
 
-![](github.png)
+![](img/github.png)
 
 Note:
 I'm also an Open source developer as SystemFw, mainly as a core maintainer of fs2 and cats-effect
@@ -86,9 +86,8 @@ threads, and do a lot of sleeping.
 
 ## Pictures
 
-![](image.png)
+![](img/image.png)
 
-Does a sentence fit here
 
 ---
 
