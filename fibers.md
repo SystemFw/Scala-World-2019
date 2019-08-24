@@ -175,15 +175,25 @@ A logical thread is a _sequence_ of _discrete steps_
 
 Note:
     
-This might seem obvious, but it has profound consequences. In
-particular, we can imagine new types of logical threads by imagining
+This might seem obvious, but it has profound consequences.
+- Discrete steps allow interleaving
+- We can imagine new types of logical threads by imagining
 new types of discrete steps
 TODO put this point in slide about IO somewhere.
 
-
 ----
 
-## Logical thread: interleaving
+## Interleaving
+
+![](img/interleaving3.png)
+
+
+Note:
+
+- The notion of discrete step naturally gives rise to the notion of
+  interleaving.
+
+TODO resize image?
 
 ----
 
@@ -195,7 +205,8 @@ TODO put this point in slide about IO somewhere.
 ## Concurrency & parallelism
 
 How the steps are interleaved vs how many actually run?
-structuring vs running? put this into the real world concurrency section?
+structuring vs running?
+TODO put this into the real world concurrency section?
 
 ----
 
