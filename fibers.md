@@ -97,20 +97,16 @@ As a user, I highly recommend a higher level model like **fs2**'s.
 <!-- .element: class="fragment" !--> But today we are _implementors_,
 and we will look at the low level runtime that powers `IO`.
 
-Note:
-- As a user, I highly recommend using a higher level concurrency
-  abstraction like fs2, which is at the same time more expressive and
-  safer.
-- But today we wear our implementors hat, and we are exclusively going
-  to look at the cats-effect low level primitives that power the whole
-  system.
-- organising this functionality in typeclasses it its own topic, we
-  are going to focus on concrete IO
-
 
 ---
 
 ## Asynchrony & Concurrency
+
+Conceptually
+
+Note:
+Stress how several terms like process or thread are going to be used
+loosely in this section
 
 ----
 
@@ -151,10 +147,87 @@ later.
 
 ----
 
+## Concurrency
+
+Naively:
+
+> Multiple processes executing at the same time...
+
+<!-- .element: class="fragment" !--> ... way too wide for our purposes!
+
+<!-- .element: class="fragment" !--> (and overlaps with parallelism)
+
+----
+
+## Concurrency
+
+> A **program structuring** technique in which there are multiple
+  logical threads of control, whose effects are interleaved
+
+
+----
+
+## Logical thread
+
+![](img/thread.png)
+
+A logical thread is a _sequence_ of _discrete steps_
+
+Note:
+    
+This might seem obvious, but it has profound consequences. In
+particular, we can imagine new types of logical threads by imagining
+new types of discrete steps
+TODO put this point in slide about IO somewhere.
+
+
+----
+
+## Logical thread: interleaving
+
+----
+
+## Logical thread: N to M
+
+
+----
+
+## Concurrency & parallelism
+
+How the steps are interleaved vs how many actually run?
+structuring vs running? put this into the real world concurrency section?
+
+----
+
+## Concurrency & Asynchrony
+
+threads abstract over async
+
+----
+
+## Concurrency & Asynchrony
+
+picture with interleaving N:1
+
+----
+
+## Concurrency & Asynchrony
+
+picture with interleaving N:M (showing the transfer)
+
+----
+
+## Concurrency & Asynchrony
+
+blocking
+
+----
+
 
 ## Pictures
 
 ![](img/image.png)
+
 
 
 ---
