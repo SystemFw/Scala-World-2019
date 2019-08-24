@@ -183,9 +183,9 @@ TODO put this point in slide about IO somewhere.
 
 ----
 
-## Interleaving
+### Interleaving
 
-![](img/interleaving3.png)
+![](img/interleaving2.png)
 
 
 Note:
@@ -193,12 +193,17 @@ Note:
 - The notion of discrete step naturally gives rise to the notion of
   interleaving.
 
-TODO resize image?
+TODO can try
+- interleaving or interleaving2 + resize image + ##interleaving
+- interleaving2 + ###interleaving
+- interleaving3 + ##interleaving
+ 
 
 ----
 
-## Logical thread: N to M
+### N - M interleaving
 
+![](img/N-to-M.png)
 
 ----
 
