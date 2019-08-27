@@ -100,9 +100,9 @@ and we will look at the low level runtime that powers `IO`.
 
 ---
 
-## Asynchrony & Concurrency
+## Chapter 1: Asynchrony & Concurrency
 
-Conceptually
+A conceptual model
 
 Note:
 Stress how several terms like process or thread are going to be used
@@ -205,8 +205,53 @@ TODO can try
 
 ![](img/N-to-M.png)
 
+Note:
+How is the bottom layer run: segway into next slide
+
+
 ----
 
+## N-M
+
+Tower pic
+
+----
+
+## Threads are abstractions
+
+A logical thread offers a **synchronous** interface to an
+**asynchronous** process
+
+----
+
+![](img/async1.png)
+
+----
+
+![](img/async-threads.png)
+
+----
+
+![](img/async-threads2.png)
+
+----
+## Concurrency & Asynchrony
+
+picture with interleaving N:M (showing the transfer)
+
+![](img/async1.png) ![](img/interleaving2.png)
+
+----
+
+## Concurrency & Asynchrony
+
+blocking
+
+---
+
+## Chapter 2: Real world concurrency
+
+----
 ## Concurrency & parallelism
 
 How the steps are interleaved vs how many actually run?
@@ -215,29 +260,8 @@ TODO put this into the real world concurrency section?
 
 ----
 
-## Concurrency & Asynchrony
 
-threads abstract over async
 
-----
-
-## Concurrency & Asynchrony
-
-picture with interleaving N:1
-
-----
-
-## Concurrency & Asynchrony
-
-picture with interleaving N:M (showing the transfer)
-
-----
-
-## Concurrency & Asynchrony
-
-blocking
-
-----
 
 
 ## Pictures
@@ -910,4 +934,3 @@ blocking
 <!-- - I'm not on Twitter, reach out on Gitter @SystemFw! -->
 <!-- - http://systemfw.org/scala-italy-2018/#/ -->
 <!-- - [Example code](https://github.com/SystemFw/TL-Summit-Philly-2019/blob/master/Examples.scala) -->
-
