@@ -116,10 +116,6 @@ Traditionally defined as:
 
 > A process that executes outside of the program main flow
 
-Note:
-Stress how we aren't dealing with distributed systems right now
-
-
 ----
 
 ## Asynchronous process
@@ -136,7 +132,7 @@ Stress how "place and time" is intentionally vague
 
 ## Asynchronous process
 
-![](img/async1.png)
+![](img/async.png)
 
 Note:
 
@@ -219,12 +215,13 @@ Tower pic
 
 ## Threads are abstractions
 
-A logical thread offers a **synchronous** interface to an
-**asynchronous** process
+
+> <!-- .element: class="fragment" --> 
+  A logical thread offers a **synchronous** interface to an **asynchronous** process
 
 ----
 
-![](img/async1.png)
+![](img/async.png)
 
 ----
 
@@ -235,17 +232,21 @@ A logical thread offers a **synchronous** interface to an
 ![](img/async-threads2.png)
 
 ----
-## Concurrency & Asynchrony
 
-picture with interleaving N:M (showing the transfer)
+## Blocking
 
-![](img/async1.png) ![](img/interleaving2.png)
+> <!-- .element: class="fragment" --> 
+  Blocking at one level means **suspending** at the level below.
+
 
 ----
 
-## Concurrency & Asynchrony
+Blocking pic
 
-blocking
+----
+
+Recap
+
 
 ---
 
@@ -934,3 +935,4 @@ TODO put this into the real world concurrency section?
 <!-- - I'm not on Twitter, reach out on Gitter @SystemFw! -->
 <!-- - http://systemfw.org/scala-italy-2018/#/ -->
 <!-- - [Example code](https://github.com/SystemFw/TL-Summit-Philly-2019/blob/master/Examples.scala) -->
+
