@@ -197,9 +197,9 @@ TODO can try
 
 ----
 
-### N - M interleaving
+### M:N threading
 
-![](img/N-to-M.png)
+![](img/M:N.png)
 
 Note:
 How is the bottom layer run: segway into next slide
@@ -207,7 +207,7 @@ How is the bottom layer run: segway into next slide
 
 ----
 
-## N-M
+## M:N threading
 
 Tower pic
 
