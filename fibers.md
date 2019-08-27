@@ -199,7 +199,7 @@ TODO can try
 
 ### M:N threading
 
-![](img/M:N.png)
+![](img/M-N.png)
 
 Note:
 How is the bottom layer run: segway into next slide
@@ -207,9 +207,10 @@ How is the bottom layer run: segway into next slide
 
 ----
 
-## M:N threading
+### M:N threading
 
-Tower pic
+![](img/M-N-tower.png)
+
 
 ----
 
