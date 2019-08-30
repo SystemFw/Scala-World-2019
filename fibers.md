@@ -54,7 +54,6 @@ def server[F[_]: Concurrent: Timer: ContextShift]:Stream[F, Unit] =
         .through(text.utf8Encode)
         .through(socket.writes())
         .onFinalize(socket.endOfOutput)
-        .scope
       }
     }.parJoinUnbounded
      .interruptAfter(10.minutes)
