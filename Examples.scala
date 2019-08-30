@@ -47,6 +47,8 @@ object MySyncIO {
   object IO {
     def apply[A](v: => A): IO[A] = Delay(() => v)
 
+//    class Handler[A, B](f: Throwable => IO[B]) extends (A => IO[B])
+
     case class FlatMap[B, +A](io: IO[B], k: B => IO[A]) extends IO[A]
     case class Pure[+A](v: A) extends IO[A]
     case class RaiseError(e: Throwable) extends IO[Nothing]
@@ -66,7 +68,7 @@ object MySyncIO {
   }
 
   def read = IO(scala.io.StdIn.readLine)
-  def put(s: String) = IO(println(s))
+  def put[A](v: A) = IO(println(v))
 
   def p =
     for {
@@ -77,11 +79,17 @@ object MySyncIO {
 
   def pr = unsafeRun(p)
 
+  def p1 = IO[Unit](throw new Exception).handleErrorWith(e => put(e))
+  def p1r = unsafeRun(p1)
+
+  def p2 = IO[Unit](throw new Exception).attempt
+  def p2r = unsafeRun(p2)
+
   type Stack[A] = List[A]
   implicit class S[A](s: Stack[A]) {
     def push(a: A): Stack[A] = a +: s
     def pop: Option[(A, Stack[A])] = s match {
-      case Nil     => None
+      case Nil => None
       case x :: xs => (x, xs).some
     }
 
@@ -89,19 +97,42 @@ object MySyncIO {
 
   def unsafeRun[A](io: IO[A]): A = {
     import IO._
+    import scala.util.control.NonFatal
 
     def loop(current: IO[Any], stack: Stack[Any => IO[Any]]): A = {
       current match {
-        case Delay(body) => {
-          val res = body()
-          loop(Pure(res), stack)
-        }
-        case FlatMap(io, k) => loop(io, stack.push(k))
+        case FlatMap(io, k) =>
+          loop(io, stack.push(k))
         case Pure(v) =>
           stack.pop match {
-            case None                => v.asInstanceOf[A]
+            case None => v.asInstanceOf[A]
             case Some((bind, stack)) => loop(bind(v), stack)
           }
+        case HandleErrorWith(io, k) =>
+          loop(io, stack.push(k.asInstanceOf[Any => IO[Any]]))
+        case RaiseError(e) =>
+          def findHandler(stack: Stack[Any => IO[Any]])
+            : Option[(Any => IO[Any], Stack[Any => IO[Any]])] =
+            stack.pop match {
+              case None => None
+              case v @ Some((handler, _))
+                  if (handler.isInstanceOf[Throwable => IO[Any]]) =>
+                v
+              case Some((_, stack)) => findHandler(stack)
+            }
+
+          findHandler(stack) match {
+            case None => throw e
+            case Some((handler, stack)) => loop(handler(e), stack)
+          }
+        case Delay(body) =>
+          try {
+            val res = body()
+            loop(Pure(res), stack)
+          } catch {
+            case NonFatal(e) => loop(RaiseError(e), stack)
+          }
+
       }
     }
 
