@@ -42,8 +42,10 @@ object Examples extends IOApp {
       .interruptAfter(10.minutes)
 }
 
-object MySyncIO {
-  sealed trait IO[+A]
+object ex1 {
+  sealed trait IO[+A] {
+    def r = unsafeRun(this)
+  }
   object IO {
     def apply[A](v: => A): IO[A] = Delay(() => v)
 
@@ -78,26 +80,27 @@ object MySyncIO {
     } yield ()
 
   def pr = unsafeRun(p)
-
   def p1 = IO[Unit](throw new Exception).handleErrorWith(e => put(e))
-  def p1r = unsafeRun(p1)
-
   def p2 = IO[Unit](throw new Exception).attempt
-  def p2r = unsafeRun(p2)
+  def p3 =
+    IO[Unit](throw new Exception)
+      .map(_.asRight[Throwable])
+      .handleError(_.asLeft[Unit])
+  def p4 = IO[Throwable](throw new Exception).flatMap(e => put(e))
 
-  type Stack[A] = List[A]
-  implicit class S[A](s: Stack[A]) {
-    def push(a: A): Stack[A] = a +: s
-    def pop: Option[(A, Stack[A])] = s match {
-      case Nil => None
-      case x :: xs => (x, xs).some
-    }
-
-  }
 
   def unsafeRun[A](io: IO[A]): A = {
     import IO._
     import scala.util.control.NonFatal
+
+    type Stack[A] = List[A]
+    implicit class S[A](s: Stack[A]) {
+      def push(a: A): Stack[A] = a +: s
+      def pop: Option[(A, Stack[A])] = s match {
+        case Nil => None
+        case x :: xs => (x, xs).some
+      }
+    }
 
     def findFirstErrorHandler(stack: Stack[Any => IO[Any]]) = {
       var stack_ = stack
@@ -132,6 +135,11 @@ object MySyncIO {
             case Some((handle, newStack)) => loop(handle(e), newStack)
             case None => throw e
           }
+
+        // stack.dropWhile(!_.isInstanceOf[Throwable => IO[Any]]) match {
+        //   case Nil => throw e
+        //   case handle :: newStack => loop(handle(e), newStack)
+        // }
         case Delay(body) =>
           try {
             val res = body()
