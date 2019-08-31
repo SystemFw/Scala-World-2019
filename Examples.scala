@@ -3,6 +3,7 @@ import cats.effect._, concurrent._
 import cats.effect.implicits._
 import fs2._, io.tcp._
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 object Examples extends IOApp {
   def run(args: List[String]) = ExitCode.Success.pure[IO]
@@ -42,33 +43,21 @@ object Examples extends IOApp {
       .interruptAfter(10.minutes)
 }
 
+object stack {
+  type Stack[A] = List[A]
+  implicit class S[A](s: Stack[A]) {
+    def push(a: A): Stack[A] = a +: s
+    def pop: Option[(A, Stack[A])] = s match {
+      case Nil => None
+      case x :: xs => (x, xs).some
+    }
+  }
+}
+
+import stack._
+
+// UIO
 object ex1 {
-  sealed trait IO[+A] {
-    def r = unsafeRun(this)
-  }
-  object IO {
-    def apply[A](v: => A): IO[A] = Delay(() => v)
-
-//    class Handler[A, B](f: Throwable => IO[B]) extends (A => IO[B])
-
-    case class FlatMap[B, +A](io: IO[B], k: B => IO[A]) extends IO[A]
-    case class Pure[+A](v: A) extends IO[A]
-    case class RaiseError(e: Throwable) extends IO[Nothing]
-    case class HandleErrorWith[+A](io: IO[A], k: Throwable => IO[A])
-        extends IO[A]
-    case class Delay[+A](eff: () => A) extends IO[A]
-
-    implicit def instances: MonadError[IO, Throwable] with StackSafeMonad[IO] =
-      new MonadError[IO, Throwable] with StackSafeMonad[IO] {
-        def pure[A](x: A): IO[A] = Pure(x)
-        def handleErrorWith[A](fa: IO[A])(f: Throwable => IO[A]): IO[A] =
-          HandleErrorWith(fa, f)
-        def raiseError[A](e: Throwable): IO[A] = RaiseError(e)
-        def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B] =
-          FlatMap(fa, f)
-      }
-  }
-
   def read = IO(scala.io.StdIn.readLine)
   def put[A](v: A) = IO(println(v))
 
@@ -79,7 +68,53 @@ object ex1 {
       _ <- put(s"Hello $n")
     } yield ()
 
-  def pr = unsafeRun(p)
+  sealed trait IO[+A] {
+    def r = IO.unsafeRun(this)
+  }
+  object IO {
+    def apply[A](v: => A): IO[A] = Delay(() => v)
+
+    case class FlatMap[B, +A](io: IO[B], k: B => IO[A]) extends IO[A]
+    case class Pure[+A](v: A) extends IO[A]
+    case class Delay[+A](eff: () => A) extends IO[A]
+
+    implicit def instances: Monad[IO] =
+      new Monad[IO] {
+        def pure[A](x: A): IO[A] = Pure(x)
+        def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B] = FlatMap(fa, f)
+        // ignoring stack safety for now
+        def tailRecM[A, B](a: A)(f: A => IO[Either[A, B]]): IO[B] = ???
+      }
+
+    def unsafeRun[A](io: IO[A]): A = {
+      def loop(current: IO[Any], stack: Stack[Any => IO[Any]]): A =
+        current match {
+          case FlatMap(io, k) =>
+            loop(io, stack.push(k))
+          case Pure(v) =>
+            stack.pop match {
+              case None => v.asInstanceOf[A]
+              case Some((bind, stack)) => loop(bind(v), stack)
+            }
+          case Delay(body) =>
+            val res = body()
+            loop(Pure(res), stack)
+        }
+      loop(io, Nil)
+    }
+  }
+}
+
+// SyncIO
+object ex2 {
+  def read = IO(scala.io.StdIn.readLine)
+  def put[A](v: A) = IO(println(v))
+  def p =
+    for {
+      _ <- put("insert your name")
+      n <- read
+      _ <- put(s"Hello $n")
+    } yield ()
   def p1 = IO[Unit](throw new Exception).handleErrorWith(e => put(e))
   def p2 = IO[Unit](throw new Exception).attempt
   def p3 =
@@ -88,70 +123,70 @@ object ex1 {
       .handleError(_.asLeft[Unit])
   def p4 = IO[Throwable](throw new Exception).flatMap(e => put(e))
 
+  sealed trait IO[+A] {
+    def r = IO.unsafeRun(this)
+  }
+  object IO {
+    def apply[A](v: => A): IO[A] = Delay(() => v)
 
-  def unsafeRun[A](io: IO[A]): A = {
-    import IO._
-    import scala.util.control.NonFatal
+    case class FlatMap[B, +A](io: IO[B], k: B => IO[A]) extends IO[A]
+    case class Pure[+A](v: A) extends IO[A]
+    case class RaiseError(e: Throwable) extends IO[Nothing]
+    case class HandleErrorWith[+A](io: IO[A], k: Throwable => IO[A])
+        extends IO[A]
+    case class Delay[+A](eff: () => A) extends IO[A]
 
-    type Stack[A] = List[A]
-    implicit class S[A](s: Stack[A]) {
-      def push(a: A): Stack[A] = a +: s
-      def pop: Option[(A, Stack[A])] = s match {
-        case Nil => None
-        case x :: xs => (x, xs).some
+    implicit def instances: MonadError[IO, Throwable] =
+      new MonadError[IO, Throwable] {
+        def pure[A](x: A): IO[A] = Pure(x)
+        def handleErrorWith[A](fa: IO[A])(f: Throwable => IO[A]): IO[A] =
+          HandleErrorWith(fa, f)
+        def raiseError[A](e: Throwable): IO[A] = RaiseError(e)
+        def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B] =
+          FlatMap(fa, f)
+
+        // ignoring stack safety for now
+        def tailRecM[A, B](a: A)(f: A => IO[Either[A, B]]): IO[B] = ???
       }
-    }
 
-    def findFirstErrorHandler(stack: Stack[Any => IO[Any]]) = {
-      var stack_ = stack
-      var handler: Option[Throwable => IO[Any]] = Option.empty
+    def unsafeRun[A](io: IO[A]): A = {
+      sealed trait Bind {
+        def isHandler: Boolean = this.isInstanceOf[Bind.H]
+      }
+      object Bind {
+        case class K(f: Any => IO[Any]) extends Bind
+        case class H(f: Throwable => IO[Any]) extends Bind
+      }
 
-      while (stack_ != Nil || handler == None) {
-        val r = stack_.pop
-        if (r.isDefined) {
-          val (h, s) = r.get
-          stack_ = s
-          if (h.isInstanceOf[Throwable => IO[Any]])
-            handler = h.some
+      def loop(current: IO[Any], stack: Stack[Bind]): A =
+        current match {
+          case FlatMap(io, k) =>
+            loop(io, stack.push(Bind.K(k)))
+          case Pure(v) =>
+            stack.dropWhile(_.isHandler) match {
+              case Nil => v.asInstanceOf[A]
+              case Bind.K(f) :: stack => loop(f(v), stack)
+            }
+          case HandleErrorWith(io, h) =>
+            loop(io, stack.push(Bind.H(h)))
+          case RaiseError(e) =>
+            // dropping binds on errors until we find an error handler
+            // realises the short circuiting semantics of MonadError
+            stack.dropWhile(!_.isHandler) match {
+              case Nil => throw e
+              case Bind.H(handle) :: stack => loop(handle(e), stack)
+            }
+          case Delay(body) =>
+            try {
+              val res = body()
+              loop(Pure(res), stack)
+            } catch {
+              case NonFatal(e) => loop(RaiseError(e), stack)
+            }
         }
-      }
 
-      handler.tupleRight(stack_)
+      loop(io, Nil)
     }
-
-    def loop(current: IO[Any], stack: Stack[Any => IO[Any]]): A = {
-      current match {
-        case FlatMap(io, k) =>
-          loop(io, stack.push(k))
-        case Pure(v) =>
-          stack.pop match {
-            case None => v.asInstanceOf[A]
-            case Some((bind, stack)) => loop(bind(v), stack)
-          }
-        case HandleErrorWith(io, k) =>
-          loop(io, stack.push(k.asInstanceOf[Any => IO[Any]]))
-        case RaiseError(e) =>
-          findFirstErrorHandler(stack) match {
-            case Some((handle, newStack)) => loop(handle(e), newStack)
-            case None => throw e
-          }
-
-        // stack.dropWhile(!_.isInstanceOf[Throwable => IO[Any]]) match {
-        //   case Nil => throw e
-        //   case handle :: newStack => loop(handle(e), newStack)
-        // }
-        case Delay(body) =>
-          try {
-            val res = body()
-            loop(Pure(res), stack)
-          } catch {
-            case NonFatal(e) => loop(RaiseError(e), stack)
-          }
-
-      }
-    }
-
-    loop(io, Nil)
   }
 
 }
