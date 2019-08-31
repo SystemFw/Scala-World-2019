@@ -247,39 +247,62 @@ How is the bottom layer run: segway into next slide
   processes as synchronous sequences of discrete steps.
 - <!-- .element: class="fragment" --> Multiple logical threads can be
   **interleaved** to achieve concurrency.
-- <!-- .element: class="fragment" --> Blockins means **suspending** one
-  layer down.
-
-
-
-
+- <!-- .element: class="fragment" --> Blocking means **suspending**
+ one layer down. Logical threads at that layer keep running.
 
 ---
 
 ## Chapter 2: Real world concurrency
 
 ----
+
 ## Concurrency & parallelism
 
-How the steps are interleaved vs how many actually run?
-structuring vs running?
-TODO put this into the real world concurrency section?
+- <!-- .element: class="fragment" --> **Concurrency**: discrete steps get interleaved.
+- <!-- .element: class="fragment" --> **Parallelism**: discrete steps run simultaneously.
+- <!-- .element: class="fragment" --> **Independent** of each other.
+ 
+<!-- .element: class="fragment" --> In this talk:   
+`parallelism == implementation detail`
+
+Note:
+independent of each other (concurrency with no parallelism,
+deterministic parallelism with no concurrency).
+We will treat parallelism as an implementation detail.
 
 ----
 
+## Layers
+
+- <!-- .element: class="fragment" --> **OS Processes**: `M:N` with processors.
+  Own execution state, own memory space. 
+- <!-- .element: class="fragment" --> **OS/JVM Threads**:  `M:N` with processes.
+  Own execution state, shared memory space. 
+- <!-- .element: class="fragment" --> **Fibers**: `M:N` with threads.
+ Shared execution state, shared memory space.
+
+----
+
+## Cost of blocking
 
 
+----
 
+## Semantic blocking
 
-## Pictures
+----
 
-![](img/image.png)
+## Cooperative vs Preemptive scheduling
 
+----
 
+## Self scheduling
 
 ---
 
----
+## Chapter 3: the IO runtime
+
+
 
 
 <!-- TODO at the end: -->
