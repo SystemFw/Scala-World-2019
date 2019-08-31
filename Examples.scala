@@ -99,6 +99,23 @@ object MySyncIO {
     import IO._
     import scala.util.control.NonFatal
 
+    def findFirstErrorHandler(stack: Stack[Any => IO[Any]]) = {
+      var stack_ = stack
+      var handler: Option[Throwable => IO[Any]] = Option.empty
+
+      while (stack_ != Nil || handler == None) {
+        val r = stack_.pop
+        if (r.isDefined) {
+          val (h, s) = r.get
+          stack_ = s
+          if (h.isInstanceOf[Throwable => IO[Any]])
+            handler = h.some
+        }
+      }
+
+      handler.tupleRight(stack_)
+    }
+
     def loop(current: IO[Any], stack: Stack[Any => IO[Any]]): A = {
       current match {
         case FlatMap(io, k) =>
@@ -111,19 +128,9 @@ object MySyncIO {
         case HandleErrorWith(io, k) =>
           loop(io, stack.push(k.asInstanceOf[Any => IO[Any]]))
         case RaiseError(e) =>
-          def findHandler(stack: Stack[Any => IO[Any]])
-            : Option[(Any => IO[Any], Stack[Any => IO[Any]])] =
-            stack.pop match {
-              case None => None
-              case v @ Some((handler, _))
-                  if (handler.isInstanceOf[Throwable => IO[Any]]) =>
-                v
-              case Some((_, stack)) => findHandler(stack)
-            }
-
-          findHandler(stack) match {
+          findFirstErrorHandler(stack) match {
+            case Some((handle, newStack)) => loop(handle(e), newStack)
             case None => throw e
-            case Some((handler, stack)) => loop(handler(e), stack)
           }
         case Delay(body) =>
           try {
