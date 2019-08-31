@@ -188,12 +188,6 @@ Note:
 - The notion of discrete step naturally gives rise to the notion of
   interleaving.
 
-TODO can try
-- interleaving or interleaving2 + resize image + ##interleaving
-- interleaving2 + ###interleaving
-- interleaving3 + ##interleaving
- 
-
 ----
 
 ### M:N threading
@@ -245,12 +239,19 @@ How is the bottom layer run: segway into next slide
 
 ----
 
+## Recap
 
-----
+- <!-- .element: class="fragment" --> **Async processes** resume somewhere
+  else after an async boundary.
+- <!-- .element: class="fragment" --> **Logical threads** abstract async
+  processes as synchronous sequences of discrete steps.
+- <!-- .element: class="fragment" --> Multiple logical threads can be
+  **interleaved** to achieve concurrency.
+- <!-- .element: class="fragment" --> Blockins means **suspending** one
+  layer down.
 
-----
 
-Recap
+
 
 
 ---
