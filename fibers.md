@@ -241,7 +241,12 @@ How is the bottom layer run: segway into next slide
 
 ----
 
-Blocking pic
+![](img/blocking1.png)
+
+----
+
+
+----
 
 ----
 
