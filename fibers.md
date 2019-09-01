@@ -329,17 +329,92 @@ We will treat parallelism as an implementation detail.
 - <!-- .element: class="fragment" --> *Referentially transparent* (pure).
 - <!-- .element: class="fragment" --> Many algebras (`Monad`, `Concurrent`...).
 
+
 ----
 
+## Api
+
+- <!-- .element: class="fragment" --> **FFI** : wrap side-effects into `IO`
+- <!-- .element: class="fragment" --> **Combinators**: build complex `IO`s by composing smaller ones
+- <!-- .element: class="fragment" --> **Runners**: translate `IO` to side-effects at the end of the world
+
+----
+
+## FFI
+
+```scala
+def delay[A](a: => A): IO[A]
+def async[A](k: (Either[Throwable, A] => Unit) => Unit): IO[A]
+def asyncF[A](k: (Either[Throwable, A] => Unit) => IO[Unit]): IO[A]
+...
+```
+
+----
+
+## Combinators
+
+```scala
+def pure[A](a: A): IO[A]
+def map[A, B](fa: IO[A])(f: A => B): IO[B] 
+def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B] 
+
+def handleErrorWith[A](fa: IO[A])(f: Throwable => IO[A]): IO[A] 
+def raiseError[A](e: Throwable): IO[A]
+
+def start[A](fa: IO[A]): IO[Fiber[IO, A]]
+def race[A, B](fa: IO[A], fb: IO[B]): IO[Either[A, B]]
+def sleep(duration: FiniteDuration): IO[Unit] 
+def timeout(fa: IO[A])(duration: FiniteDuration): IO[A]
+
+def guarantee[A](fa: IO[A])(finalizer: IO[Unit]): IO[A] 
+def bracket[A, B](a: IO[A])(u: A => IO[B])(r: A => IO[Unit]): IO[B]
+...
+```
+
+----
+
+## Runners
+
+```scala
+def run(args: List[String]): IO[ExitCode] // IOApp main
+def unsafeRunAsync[A]
+     (fa: IO[A])
+     (cb: Either[Throwable, A] => Unit): Unit
+def unsafeRunSync[A](fa: IO[A]): A // JVM only
+```
+
+----
+
+## Simplest IO
+
+`+` Pure sync side effects  
+`+` Sequential composition  
+`-` Error Handling  
+`-` Asynchrony  
+`-` Concurrency  
+`-` Stack safety  
+`-` Resource safety  
 
 ---
 
+<!-- 33 for TL talk (but most of them code) -->
+<!-- this: 36 so far (but most of them images so far) -->
 
-<!-- TODO at the end: -->
-<!-- - slide nesting -->
-<!-- - css: images | text -->
-<!-- - css: images border -->
-<!-- can use custom css on a slide-by-slide basis I think -->
+<!-- potential plan -->
+<!-- UIO -->
+<!-- async -->
+<!-- section with:  -->
+<!--  callstack as logical steps, -->
+<!--  async to wrap async tasks -->
+<!--  ThreadPool as scheduler -->
+<!--  start (fork), sleep -->
+<!--  cats-effect 2.0 guide? -->
+<!--  where to go: interruption, resource safety, stack safety -->
+ 
+<!-- TODO: -->
+<!-- Disclaimer about adherence to api -->
+<!-- simple concurrency example -->
+
 
 <!-- Concurrency -->
 <!-- Programming as the composition of independently executing processes -->
@@ -362,56 +437,13 @@ We will treat parallelism as an implementation detail.
 <!-- Embedding async computations -->
 <!-- CPS example (addition) -->
 <!-- where to insert the thing about runtime loop? on top of this section? -->
-
-
-<!-- --- -->
-
-<!-- ## Api Evolution -->
-
-<!-- **fs2** -->
-<!-- -  <\!-- .element: class="fragment" -\-> 0.9 -  `Ref` via `fs2.Actor` -->
-<!-- - <\!-- .element: class="fragment" -\-> 0.10 - `Ref` + `Promise` -->
-<!-- -  <\!-- .element: class="fragment" -\-> 1.0 - `Ref` + `Deferred` -->
-
-<!-- Notes: -->
-<!-- - But let's start with a tiny bit of history, all the way back in fs2 0.9 there was this central datastructure, which was also called Ref, but was a much more complex beast backed by a custom Actor implementation, -->
-<!-- - Then in 0.10 I redesigned our concurrency scheme, introducing basically what we have today, in the form of Ref and Promise. -->
-<!-- - And finally before fs2 1.0, we decided to move Ref and Promise to cats-effect, and renamed Promise to Deferred. -->
-
+<!-- simple concurrency example -->
+<!-- `start` vs `fork` -->
+<!-- mention interruption? -->
+<!-- `sleep`? -->
+<!-- what example should we use? -->
+<!-- where to put the api for Ec and scheduledEc? -->
+<!-- section about Fiber, ContextShift and Timer? -->
+<!--  section about real blocking -->
 
 <!-- --- -->
-
-<!-- ## Ref[F, A] -->
-
-<!-- -  <\!-- .element: class="fragment" -\-> Purely functional mutable reference -->
-<!-- - <\!-- .element: class="fragment" -\-> Concurrent, lock-free -->
-<!-- -  <\!-- .element: class="fragment" -\-> Always contains a value -->
-<!-- -  <\!-- .element: class="fragment" -\-> Built on `IO` + `AtomicReference` -->
-
-<!-- ---- -->
-
-<!-- ## Ref api (1) -->
-
-<!-- ```scala -->
-<!-- trait Ref[A] { -->
-<!--   def get: IO[A] -->
-<!--   def set(a: A): IO[Unit] -->
-<!-- } -->
-<!-- object Ref { -->
-<!--   def of[A](a: A): IO[Ref[A]] -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- - <\!-- .element: class="fragment" -\-> Created by giving an initial value -->
-<!-- - <\!-- .element: class="fragment" -\-> Every op wrapped in `IO` for purity -->
-<!-- - <\!-- .element: class="fragment" -\-> `A` is an _immutable_ structure -->
-<!-- - <\!-- .element: class="fragment" -\-> Real version is polymorphic in `F` -->
-
-<!-- Notes: -->
-
-<!-- A Ref always has a value, and as you can see, Access, setting _and_ creation are all wrapped in IO, -->
-<!-- which ensures referential transparency when encapsulating a mutable API. -->
-<!-- If you find this confusing, I have a whole talk just on this -->
-<!-- Real version polymorphic in F, we'll see it in a bit -->
-
-<!-- ---- -->
