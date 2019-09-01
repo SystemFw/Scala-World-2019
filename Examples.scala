@@ -316,14 +316,13 @@ object ex4 {
               case Nil => cb(Left(e))
               case Bind.H(handle) :: stack => loop(handle(e), stack, cb)
             }
-          case Async(expectsRestOfComputation) =>
-            expectsRestOfComputation { res: Either[Throwable, Any] =>
-              loop(
-                res.fold(RaiseError(_), Pure(_)),
-                stack,
-                cb
-              )
+          case Async(asyncProcess) =>
+            val restOfComputation = { res: Either[Throwable, Any] =>
+              val nextIO = res.fold(RaiseError(_), Pure(_))
+              loop(nextIO, stack, cb)
             }
+
+            asyncProcess(restOfComputation)
         }
 
       loop(io, Nil, cb)

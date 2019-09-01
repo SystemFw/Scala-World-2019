@@ -647,23 +647,26 @@ cb(v.asInstanceOf[A])
 ### Async runloop
 
 ```scala
-case class Async[A](
-  k: ([Either[Throwable, Unit]) => Unit) extends IO[A]
+case class Async[+A](
+   k: (Either[Throwable, A] => Unit) => Unit) extends IO[A]
 ```
 
 ```scala
 def loop(
-   current: IO[Any],
-   stack: Stack[Any => IO[Any]],
-   cb: Either[Throwable, A] => Unit
-  ): Unit = current match {
- case Async(k) =>
-     k.apply { res: Either[Throwable, Unit] =>
-       loop(
-         res.fold(RaiseError(_), Pure(_))
-       )
+    current: IO[Any],
+    stack: Stack[Any => IO[Any]],
+    cb: Either[Throwable, A] => Unit): Unit = current match {
+  ...
+
+  case Async(asyncProcess) =>
+    val restOfComputation = { res: Either[Throwable, Any] =>
+      val nextIO = res.fold(RaiseError(_), Pure(_))
+      loop(nextIO, stack, cb)
      }
-}
+    // send the rest somewhere else
+    asyncProcess(restOfComputation)
+
+  ...
 ```
 
 <!-- 33 for TL talk (but most of them code) -->
