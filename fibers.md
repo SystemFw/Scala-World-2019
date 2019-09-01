@@ -441,6 +441,44 @@ FlatMap(
 ```
 <!-- .element: class="fragment" -->
 
+----
+
+## Runloop
+
+- <!-- .element: class="fragment" --> Executes instructions one of at the time
+- <!-- .element: class="fragment" --> Keeps track of the current `IO` and the stack of binds.
+
+```scala
+source: IO[Any]
+callstack: Stack[Any => IO[Any]]
+```
+<!-- .element: class="fragment" -->
+
+<!-- .element: class="fragment" --> `Any` lets us use a simple datastructure over a typed tree.
+
+----
+
+## Runloop
+
+```scala
+def unsafeRun[A](io: IO[A]): A = {
+  def loop(current: IO[Any], stack: Stack[Any => IO[Any]]): A =
+    current match {
+      case FlatMap(io, k) =>
+        loop(io, stack.push(k))
+      case Pure(v) =>
+        stack.pop match {
+          case None => v.asInstanceOf[A]
+          case Some((bind, stack)) => loop(bind(v), stack)
+        }
+      case Delay(body) =>
+        val res = body()
+        loop(Pure(res), stack)
+    }
+  loop(io, Stack.empty)
+}
+```
+
 ---
 
 <!-- 33 for TL talk (but most of them code) -->
