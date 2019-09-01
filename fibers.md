@@ -409,7 +409,37 @@ def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B]
 // runners
 def unsafeRunSync[A](fa: IO[A]): A
 ```
-<!-- .element: class="fragment" --> **Isomorphic to `() => A`**
+- <!-- .element: class="fragment" --> **Isomorphic to `() => A`**
+- <!-- .element: class="fragment" --> Data type + interpreter
+- <!-- .element: class="fragment" --> Runloop + callstack
+
+----
+
+## Data type
+
+```scala
+sealed trait IO[+A]
+case class FlatMap[B, +A](io: IO[B], k: B => IO[A]) extends IO[A]
+case class Pure[+A](v: A) extends IO[A]
+case class Delay[+A](eff: () => A) extends IO[A]
+```
+```scala
+def read = IO(scala.io.StdIn.readLine)
+def put[A](v: A) = IO(println(v))
+def prompt = put("What's your name?") >> read
+def hello = prompt.flatMap(n => s"hello $n")
+```
+<!-- .element: class="fragment" -->
+```scala
+FlatMap(
+  FlatMap(
+    Delay(() => print("name?")),
+    _ => Delay(() => readLine)
+  ),
+  n => Delay(() => println(n))
+)
+```
+<!-- .element: class="fragment" -->
 
 ---
 

@@ -43,6 +43,26 @@ object Examples extends IOApp {
       .interruptAfter(10.minutes)
 }
 
+object ex0 {
+  type IO[A] = IO.Token => A
+  object IO {
+    def apply[A](a: => A): IO[A] = _ => a
+
+    class Token private[IO] ()
+    def unsafeRun[A](fa: IO[A]): A = fa(new Token)
+  }
+
+  def read = IO(scala.io.StdIn.readLine)
+  def put[A](v: A) = IO(println(v))
+
+  def p =
+    for {
+      _ <- put("insert your name")
+      n <- read
+      _ <- put(s"Hello $n")
+    } yield ()
+}
+
 object stack {
   type Stack[A] = List[A]
   implicit class S[A](s: Stack[A]) {
@@ -109,6 +129,18 @@ object ex1 {
 object ex2 {
   def read = IO(scala.io.StdIn.readLine)
   def put[A](v: A) = IO(println(v))
+  def prompt = put("What's your name?") >> read
+  def hello = prompt.flatMap(n => s"hello $n")
+
+  FlatMap(
+    FlatMap(
+      Delay(() => print("name?")),
+      _ => Delay(() => readLine)
+    ),
+    n => Delay(() => println(n))
+  )
+
+
   def p =
     for {
       _ <- put("insert your name")
