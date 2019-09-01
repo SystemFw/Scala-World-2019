@@ -387,13 +387,29 @@ def unsafeRunSync[A](fa: IO[A]): A // JVM only
 
 ## Simplest IO
 
-`+` Pure sync side effects  
-`+` Sequential composition  
-`-` Error Handling  
-`-` Asynchrony  
-`-` Concurrency  
-`-` Stack safety  
-`-` Resource safety  
+- Pure
+- Synchronous FFI
+- Sequential composition
+- ~~Error Handling~~
+- ~~Asynchrony~~
+- ~~Concurrency~~
+- ~~Stack safety~~
+- ~~Resource safety~~
+
+----
+
+## Api
+
+```scala
+// FFI
+def delay[A](a: => A): IO[A]
+// combinators
+def pure[A](a: A): IO[A]
+def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B]
+// runners
+def unsafeRunSync[A](fa: IO[A]): A
+```
+<!-- .element: class="fragment" --> **Isomorphic to `() => A`**
 
 ---
 
