@@ -285,22 +285,35 @@ We will treat parallelism as an implementation detail.
 
 ## Cost of blocking
 
+> <!-- .element: class="fragment" -->
+  JVM threads are a _scarce resource_.
 
 ----
 
 ## Semantic blocking
 
+- <!-- .element: class="fragment" --> `Fibers` aren't scarce.
+- <!-- .element: class="fragment" --> Blocking a `Fiber` doesn't block the underlying `Thread`.
+- <!-- .element: class="fragment" --> Semantic blocking is pervasive.
+
 ----
 
 ## Cooperative vs Preemptive scheduling
 
+- <!-- .element: class="fragment" --> Preemptive: scheduler suspends tasks.
+- <!-- .element: class="fragment" --> Cooperative: tasks suspend themselves.
+
 ----
 
-## Self scheduling
+## Scheduling
+
+![](img/scheduler.png)
+
+- <!-- .element: class="fragment" --> hard to do `M:N` this way
 
 ---
 
-## Chapter 3: the IO runtime
+## Chapter 3: the IO api
 
 
 
