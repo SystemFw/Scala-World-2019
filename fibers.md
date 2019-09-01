@@ -298,18 +298,24 @@ We will treat parallelism as an implementation detail.
 
 ----
 
-## Cooperative vs Preemptive scheduling
+## Scheduling
 
 - <!-- .element: class="fragment" --> Preemptive: scheduler suspends tasks.
 - <!-- .element: class="fragment" --> Cooperative: tasks suspend themselves.
 
 ----
 
-## Scheduling
-
 ![](img/scheduler.png)
 
-- <!-- .element: class="fragment" --> hard to do `M:N` this way
+- <!-- .element: class="fragment" --> Better suited for preemption
+- <!-- .element: class="fragment" --> Harder to do `M:N` this way
+
+----
+
+![](img/scheduler2.png)
+
+- <!-- .element: class="fragment" --> `M:N` cooperative scheduling: `Fibers`!
+
 
 ---
 
