@@ -319,6 +319,28 @@ We will treat parallelism as an implementation detail.
 
 - <!-- .element: class="fragment" --> `M:N` cooperative scheduling: `Fibers`!
 
+----
+
+## Building blocks
+
+```scala
+trait ExecutionContext {
+ def execute(runnable: Runnable): Unit
+}
+```
+```scala
+// From Java, slightly adapted
+trait Runnable {
+  def run(): Unit
+}
+trait ScheduledExecutorService {
+  def schedule(runnable: Runnable, delay: FiniteDuration): Unit
+}
+```
+
+Note:
+- They have been adapted
+
 ---
 
 ## Chapter 3: the IO api
@@ -427,7 +449,7 @@ case class Delay[+A](eff: () => A) extends IO[A]
 def read = IO(scala.io.StdIn.readLine)
 def put[A](v: A) = IO(println(v))
 def prompt = put("What's your name?") >> read
-def hello = prompt.flatMap(n => s"hello $n")
+def hello = prompt.flatMap(n => put(s"hello $n"))
 ```
 <!-- .element: class="fragment" -->
 ```scala
@@ -454,35 +476,189 @@ callstack: Stack[Any => IO[Any]]
 ```
 <!-- .element: class="fragment" -->
 
-<!-- .element: class="fragment" --> `Any` lets us use a simple datastructure over a typed tree.
+<!-- .element: class="fragment" --> `Any` lets us use a simple data structure over a typed tree.
 
 ----
 
 ## Runloop
 
 ```scala
-def unsafeRun[A](io: IO[A]): A = {
+def flatMap[A, B](fa: IO[A])(f: A => IO[B]): IO[B]
+```
+
+```scala
+def unsafeRunSync[A](io: IO[A]): A = {
   def loop(current: IO[Any], stack: Stack[Any => IO[Any]]): A =
     current match {
       case FlatMap(io, k) =>
         loop(io, stack.push(k))
+      case Delay(body) =>
+        val res = body() // launch missiles
+        loop(Pure(res), stack)
       case Pure(v) =>
         stack.pop match {
           case None => v.asInstanceOf[A]
-          case Some((bind, stack)) => loop(bind(v), stack)
+          case Some((bind, stack)) => 
+            val nextIO = bind(v)
+            loop(nextIO, stack)
         }
-      case Delay(body) =>
-        val res = body()
-        loop(Pure(res), stack)
     }
   loop(io, Stack.empty)
 }
 ```
 
+----
+
+## A further glance 
+```scala
+case class RaiseError(e: Throwable) extends IO[Nothing]
+case class HandleErrorWith[+A](io: IO[A], k: Throwable => IO[A])
+    extends IO[A]
+
+def unsafeRunSync[A](io: IO[A]): A = {
+  sealed trait Bind {
+    def isHandler: Boolean = this.isInstanceOf[Bind.H]
+  }
+  object Bind {
+    case class K(f: Any => IO[Any]) extends Bind
+    case class H(f: Throwable => IO[Any]) extends Bind
+  }
+
+  def loop(current: IO[Any], stack: Stack[Bind]): A =
+    current match {
+      case FlatMap(io, k) =>
+        loop(io, stack.push(Bind.K(k)))
+      case HandleErrorWith(io, h) =>
+        loop(io, stack.push(Bind.H(h)))
+      case Delay(body) =>
+        try {
+          val res = body()
+          loop(Pure(res), stack)
+        } catch {
+          case NonFatal(e) => loop(RaiseError(e), stack)
+        }
+      case Pure(v) =>
+        stack.dropWhile(_.isHandler) match {
+          case Nil => v.asInstanceOf[A]
+          case Bind.K(f) :: stack => loop(f(v), stack)
+        }
+      case RaiseError(e) =>
+        // dropping binds on errors until we find an error handler
+        // realises the short circuiting semantics of MonadError
+        stack.dropWhile(!_.isHandler) match {
+          case Nil => throw e
+          case Bind.H(handle) :: stack => loop(handle(e), stack)
+        }
+    }
+
+  loop(io, Nil)
+}
+```
+
 ---
+
+## Chapter 4: Async
+
+```scala
+def async[A](k: (Either[Throwable, A] => Unit) => Unit): IO[A]
+```
+<!-- .element: class="fragment" -->
+
+- <!-- .element: class="fragment" --> It does **not** introduce asynchrony on its own
+- <!-- .element: class="fragment" --> It takes an asynchronous process and exposes it as `IO`
+- <!-- .element: class="fragment" --> We'll explain the strange-looking type :)
+
+----
+
+## Continuation passing style
+
+Instead of returning a result, we _call_ the rest of the computation
+  with it.
+
+----
+
+## CPS
+
+```scala
+def add(a: Int, b: Int): Int = a + b
+def double(a: Int): Int = a * 2
+
+```
+
+```scala
+def add(a: Int, b: Int)(rest: Int => Unit): Unit = {
+  val res = a + b
+  rest(res)
+}
+def double(a: Int)(rest: Int => Unit): Unit = {
+  val res = a * 2
+  rest(res)
+}
+def main = add(1, 2){ sum => 
+  double(sum) { doubled => 
+    println(doubled)
+  }
+ }
+```
+<!-- .element: class="fragment" -->
+
+----
+
+## CPS & asynchrony
+
+- <!-- .element: class="fragment" --> `foo: A` _has_ to return an `A` here and now
+- <!-- .element: class="fragment" --> But async processes continue somewhere else
+- <!-- .element: class="fragment" --> Intrinsically CPS'd: `(A => Unit) => Unit`
+
+```scala
+(Either[Throwable, A] => Unit) => Unit // accounts for errors
+```
+<!-- .element: class="fragment" --> 
+
+----
+
+## Async runloop
+
+```scala
+def unsafeRunAsync[A](
+    io: IO[A],
+    cb: Either[Throwable, A] => Unit): Unit = {
+  def loop(
+      current: IO[Any],
+      stack: Stack[Any => IO[Any]],
+      cb: Either[Throwable, A] => Unit): Unit = ???
+
+  loop(io, Nil, cb)
+}
+```
+
+----
+
+### Async runloop
+
+```scala
+case class Async[A](
+  k: ([Either[Throwable, Unit]) => Unit) extends IO[A]
+```
+
+```scala
+def loop(
+   current: IO[Any],
+   stack: Stack[Any => IO[Any]],
+   cb: Either[Throwable, A] => Unit
+  ): Unit = current match {
+ case Async(k) =>
+     k.apply { res: Either[Throwable, Unit] =>
+       loop(
+         res.fold(RaiseError(_), Pure(_))
+       )
+     }
+}
+```
 
 <!-- 33 for TL talk (but most of them code) -->
 <!-- this: 36 so far (but most of them images so far) -->
+<!-- slideNumber:  true + flattening to count -->
 
 <!-- potential plan -->
 <!-- UIO -->

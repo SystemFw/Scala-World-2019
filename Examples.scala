@@ -111,14 +111,14 @@ object ex1 {
         current match {
           case FlatMap(io, k) =>
             loop(io, stack.push(k))
+          case Delay(body) =>
+            val res = body()
+            loop(Pure(res), stack)
           case Pure(v) =>
             stack.pop match {
               case None => v.asInstanceOf[A]
               case Some((bind, stack)) => loop(bind(v), stack)
             }
-          case Delay(body) =>
-            val res = body()
-            loop(Pure(res), stack)
         }
       loop(io, Nil)
     }
@@ -130,16 +130,15 @@ object ex2 {
   def read = IO(scala.io.StdIn.readLine)
   def put[A](v: A) = IO(println(v))
   def prompt = put("What's your name?") >> read
-  def hello = prompt.flatMap(n => s"hello $n")
+  def hello = prompt.flatMap(n => put(s"hello $n"))
 
-  FlatMap(
-    FlatMap(
-      Delay(() => print("name?")),
-      _ => Delay(() => readLine)
-    ),
-    n => Delay(() => println(n))
-  )
-
+  // FlatMap(
+  //   FlatMap(
+  //     Delay(() => print("name?")),
+  //     _ => Delay(() => readLine)
+  //   ),
+  //   n => Delay(() => println(n))
+  // )
 
   def p =
     for {
@@ -194,6 +193,13 @@ object ex2 {
         current match {
           case FlatMap(io, k) =>
             loop(io, stack.push(Bind.K(k)))
+          case Delay(body) =>
+            try {
+              val res = body() // launch missiles
+              loop(Pure(res), stack)
+            } catch {
+              case NonFatal(e) => loop(RaiseError(e), stack)
+            }
           case Pure(v) =>
             stack.dropWhile(_.isHandler) match {
               case Nil => v.asInstanceOf[A]
@@ -208,17 +214,38 @@ object ex2 {
               case Nil => throw e
               case Bind.H(handle) :: stack => loop(handle(e), stack)
             }
-          case Delay(body) =>
-            try {
-              val res = body()
-              loop(Pure(res), stack)
-            } catch {
-              case NonFatal(e) => loop(RaiseError(e), stack)
-            }
         }
 
       loop(io, Nil)
     }
   }
+}
 
+// CPS
+object ex3 {
+
+  // def add(a: Int, b: Int): Int = ???
+  // def double(a: Int): Int = ???
+
+  def add(a: Int, b: Int)(rest: Int => Unit): Unit = {
+    val res = a + b
+    rest(res)
+  }
+  def double(a: Int)(rest: Int => Unit): Unit = {
+    val res = a * 2
+    rest(res)
+  }
+  def main =
+    add(1, 2)(sum => double(sum)(doubled => println(doubled)))
+
+  def unsafeRunAsync[A](
+      io: IO[A],
+      cb: Either[Throwable, A] => Unit): Unit = {
+    def loop(
+        current: IO[Any],
+        stack: Stack[Any => IO[Any]],
+        cb: Either[Throwable, A] => Unit): Unit = ???
+
+    loop(io, Nil, cb)
+  }
 }
