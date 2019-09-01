@@ -631,6 +631,16 @@ def unsafeRunAsync[A](
   loop(io, Nil, cb)
 }
 ```
+```
+throw e // unhandled error in RaiseError
+v.asInstanceOf[A] // final result in Pure
+
+// become
+
+cb(Left(e))
+cb(v.asInstanceOf[A])
+```
+<!-- .element: class="fragment" -->
 
 ----
 
