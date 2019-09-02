@@ -639,7 +639,7 @@ v.asInstanceOf[A] // final result in Pure
 // become
 
 cb(Left(e))
-cb(v.asInstanceOf[A])
+cb(Right(v.asInstanceOf[A]))
 ```
 <!-- .element: class="fragment" -->
 
