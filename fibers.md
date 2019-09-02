@@ -681,54 +681,77 @@ def loop(
 
 ![](img/fibers.png)
 
+----
+
+point about CtxShift + Timer
+
+----
+
+shift
+
+----
+
+start
+
+Fiber is just a handle over a runlop
+join: waiting, `Deferred`, `Ref` + `async`
+cancel: interruption out of scope, runloop stops running on a signal
+
+----
+
+fork
+
+----
+
+sleep
+
+----
+
+stupid example
+
+
+---
+
+ ## We haven't talked about
+
+ - Interruption!
+ - Resource safety
+ - Stack safety
+ - Dealing with Thread blocking
+ - Fs2's higher level api
+
+---
+
+## Full circle
+
+```scala
+def server[F[_]: Concurrent: Timer: ContextShift]:Stream[F, Unit] =
+  socketGroup.server(address).map { connection =>
+    Stream.resource(connection).flatMap { socket =>
+      Stream
+        .range(0, 10)
+        .map(i => s"Ping no $i \n")
+        .covary[F]
+        .metered(1.second)
+        .through(text.utf8Encode)
+        .through(socket.writes())
+        .onFinalize(socket.endOfOutput)
+      }
+    }.parJoinUnbounded
+     .interruptAfter(10.minutes)
+```
+
+---
+
+## Conclusion: Abstraction is great!
+
+---
+
+## Questions?
+
+- I'm not on Twitter, reach out on Gitter @SystemFw!
+- Blog at [https://systemfw.org](https://systemfw.org)
+- [Example code](https://github.com/SystemFw/Scala-World-2019/blob/master/Examples.scala)
+
 <!-- 33 for TL talk (but most of them code) -->
 <!-- this: 36 so far (but most of them images so far) -->
-<!-- slideNumber:  true + flattening to count -->
-
-<!-- potential plan -->
-<!-- UIO -->
-<!-- async -->
-<!-- section with:  -->
-<!--  callstack as logical steps, -->
-<!--  async to wrap async tasks -->
-<!--  ThreadPool as scheduler -->
-<!--  start (fork), sleep -->
-<!--  cats-effect 2.0 guide? -->
-<!--  where to go: interruption, resource safety, stack safety -->
- 
-<!-- TODO: -->
-<!-- Disclaimer about adherence to api -->
-<!-- simple concurrency example -->
-
-
-<!-- Concurrency -->
-<!-- Programming as the composition of independently executing processes -->
-<!-- Parallelism -->
-<!-- Programming as the simultaneous execution of (possibly related) computations. -->
-<!-- Concurrency is about dealing with lots of things at once. -->
-<!-- Parallelism is about doing lots of things at once. -->
-
-<!-- -------- -->
-
-<!-- IO -->
-<!-- FFI - delay, async, cancelable -->
-<!-- combinators: flatMap, handleErroWith, sleep, start -->
-<!-- runner: unsafeRunAsync, unsafeRunSync -->
-<!-- focus: async, start, sleep, unsafeRunAsync -->
-
-<!-- --------- -->
-
-<!-- the type of async -->
-<!-- Embedding async computations -->
-<!-- CPS example (addition) -->
-<!-- where to insert the thing about runtime loop? on top of this section? -->
-<!-- simple concurrency example -->
-<!-- `start` vs `fork` -->
-<!-- mention interruption? -->
-<!-- `sleep`? -->
-<!-- what example should we use? -->
-<!-- where to put the api for Ec and scheduledEc? -->
-<!-- section about Fiber, ContextShift and Timer? -->
-<!--  section about real blocking -->
-
-<!-- --- -->
