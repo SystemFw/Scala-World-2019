@@ -5,6 +5,7 @@ theme: solarized
 highlightTheme: solarized-light
 revealOptions:
   transition: slide
+  <!-- slideNumber: true -->
 ---
 
 # How do Fibers work
@@ -338,9 +339,6 @@ trait ScheduledExecutorService {
 }
 ```
 
-Note:
-- They have been adapted
-
 ---
 
 ## Chapter 3: the IO api
@@ -614,7 +612,10 @@ def main = add(1, 2){ sum =>
 (Either[Throwable, A] => Unit) => Unit // accounts for errors
 ```
 <!-- .element: class="fragment" --> 
-
+```scala
+def async[A](k: (Either[Throwable, A] => Unit) => Unit): IO[A]
+```
+<!-- .element: class="fragment" -->
 ----
 
 ## Async runloop
@@ -640,6 +641,9 @@ v.asInstanceOf[A] // final result in Pure
 cb(Left(e))
 cb(v.asInstanceOf[A])
 ```
+<!-- .element: class="fragment" -->
+
+The final, user provided callback is often just a reporter
 <!-- .element: class="fragment" -->
 
 ----
@@ -668,6 +672,14 @@ def loop(
 
   ...
 ```
+
+---
+
+## Chapter 5: Assembling fibers
+
+----
+
+![](img/fibers.png)
 
 <!-- 33 for TL talk (but most of them code) -->
 <!-- this: 36 so far (but most of them images so far) -->
