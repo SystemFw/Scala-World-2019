@@ -329,3 +329,15 @@ object ex4 {
     }
   }
 }
+
+object ex5 {
+  val ec = scala.concurrent.ExecutionContext.global
+
+  val shift: IO[Unit] = IO.async { cb =>
+    val rightUnit = Right(())
+    ec.execute { () =>
+      cb(rightUnit)
+    }
+  }
+
+}

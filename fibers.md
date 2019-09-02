@@ -683,32 +683,127 @@ def loop(
 
 ----
 
-point about CtxShift + Timer
+## Runtime system
+
+The runloop needs access to
+```scala
+ExecutionContext // forking & yielding
+ScheduledExecutorService // sleeping
+```
+
+```
+trait IOApp {
+  def ctx: ContextShift[IO] // wraps EC
+  def timer: Timer[IO] // wrap SEC
+
+  def run(arg: List[String]) = runloop
+}
+```
+<!-- .element: class="fragment" -->
 
 ----
 
-shift
+## Yielding
+
+```scala
+def shift: IO[Unit] = IO.async { cb =>
+  val rightUnit = Right(())
+  ec.execute { () =>
+    cb(rightUnit)
+  }
+}
+```
+<!-- .element: class="fragment" -->
 
 ----
 
-start
+## start
+```scala
+def start[A](io: IO[A]): IO[Fiber[IO, A]]
 
-Fiber is just a handle over a runlop
-join: waiting, `Deferred`, `Ref` + `async`
-cancel: interruption out of scope, runloop stops running on a signal
+trait Fiber[F[_], A] {
+  def join: F[A]
+  def cancel: F[Unit]
+}
+```
+<!-- .element: class="fragment" -->
+
+- <!-- .element: class="fragment" --> `Fiber` is just a handle over a runloop
+- <!-- .element: class="fragment" --> `join`: semantically blocks for completion (via `Deferred` and ultimately `Ref` + `async`)
+- <!-- .element: class="fragment" -->`cancel`: interruption (runloop stops running on a signal, out of scope)
 
 ----
 
-fork
+## spawn
+
+- <!-- .element: class="fragment" --> spawns a runloop, without a handle
+- <!-- .element: class="fragment" --> Equivalent of `start.void`
+- <!-- .element: class="fragment" --> Leaky, but see initial point about fs2 in general
+
+```scala
+def spawn[A](io: IO[A]): IO[A] = IO.async { cb =>
+  (IO.shift >> io).unsafeRunAsync(_ => ())
+  cb(Right(()))
+}
+```
+<!-- .element: class="fragment" -->
 
 ----
 
-sleep
+## sleep
+
+- <!-- .element: class="fragment" --> Semantically blocks for a given duration
+
+```scala
+def sleep(duration: FiniteDuration): IO[Unit] = IO.async { cb =>
+  sec.schedule(
+    () => ec.submit(cb(Right(()))),
+    duration.length,
+    duration.unit
+  )
+}
+```
+<!-- .element: class="fragment" -->
 
 ----
 
-stupid example
+## Putting it all together
 
+```scala
+def put[A](s: String) = IO(println("hello"))
+
+def periodic(n: Int, t: FiniteDuration, action: IO[Unit]) = {
+  def loop(i: Int) =
+    if (i == n) ().pure[IO]
+    else action >> IO.sleep(t) >> loop(i + 1)
+  loop(0)
+}
+
+for {
+ _ <- periodic(7, 300.millis, put("Fiber 1")).start
+ _ <- periodic(10, 200.millis, put("Fiber 2")).start
+} yield ()
+
+```
+
+----
+
+## Better
+```scala
+Stream(
+  Stream
+   .repeatEval(put("Fiber 1"))
+   .metered(300.millis)
+   .take(7),
+  Stream
+   .repeatEval(put("Fiber 2"))
+   .metered(200.millis)
+   .take(10)
+).parJoinUnbounded
+```
+
+- <!-- .element: class="fragment" --> Safer, more composable, higher level
+- <!-- .element: class="fragment" --> Ultimately based on the same building blocks
 
 ---
 
