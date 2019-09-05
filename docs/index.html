@@ -653,7 +653,7 @@ def sleep(duration: FiniteDuration): IO[Unit] = IO.async { cb =>
 ## Putting it all together
 
 ```scala
-def put[A](s: String) = IO(println("hello"))
+def put[A](s: String) = IO(println(s))
 
 def periodic(n: Int, t: FiniteDuration, action: IO[Unit]) = {
   def loop(i: Int) =
