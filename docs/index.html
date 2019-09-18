@@ -628,7 +628,7 @@ trait Fiber[F[_], A] {
 - <!-- .element: class="fragment" --> Leaky, but see initial point about fs2 in general
 
 ```scala
-def spawn[A](io: IO[A]): IO[A] = IO.async { cb =>
+def spawn[A](io: IO[A]): IO[Unit] = IO.async { cb =>
   (IO.shift >> io).unsafeRunAsync(_ => ())
   cb(Right(()))
 }
