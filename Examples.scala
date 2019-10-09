@@ -341,11 +341,11 @@ object ex5 {
     }
   }
 
-  def sleep(f: FiniteDuration): IO[Unit] = IO.async { cb =>
-    val rightUnit = Right(())
-    sec.schedule(new Runnable {
-      override def run(): Unit = cb(rightUnit)
-    }, f._1, f._2)
+  def sleep(duration: FiniteDuration): IO[Unit] = IO.async { cb =>
+    sec.schedule(
+      () => ec.submit(cb(Right(()))),
+      duration.length,
+      duration.unit
+    )
   }
-  
 }
