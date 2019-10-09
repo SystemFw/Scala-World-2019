@@ -332,6 +332,7 @@ object ex4 {
 
 object ex5 {
   val ec = scala.concurrent.ExecutionContext.global
+  val sec = new java.util.concurrent.ScheduledThreadPoolExecutor(1)
 
   val shift: IO[Unit] = IO.async { cb =>
     val rightUnit = Right(())
@@ -340,4 +341,11 @@ object ex5 {
     }
   }
 
+  def sleep(f: FiniteDuration): IO[Unit] = IO.async { cb =>
+    val rightUnit = Right(())
+    sec.schedule(new Runnable {
+      override def run(): Unit = cb(rightUnit)
+    }, f._1, f._2)
+  }
+  
 }
